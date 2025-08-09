@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 const subscriptions = {};
 
 app.use(express.json());
-
+app.use(cors());
 
 
 const SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"];
