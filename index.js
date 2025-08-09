@@ -55,7 +55,7 @@ app.post("/subscribe", async (req, res) => {
 app.post("/send", async (req, res) => {
   const { token, topic, title, body, msg_id } = req.body;
 
-  if ((!token && !topic) || !title || !body || !msg_id) {
+  if ((!token && !topic) || !title || !body || !msg_id || !image) {
     return res.status(400).json({
       success: false,
       error: "Missing required fields: must provide token OR topic, and title, body, msg_id"
@@ -69,6 +69,7 @@ app.post("/send", async (req, res) => {
       message: {
         notification: {
           title: title,
+          image: image,
           body: body
         },
         data: {
