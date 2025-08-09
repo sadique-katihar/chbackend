@@ -4,7 +4,6 @@ const axios = require("axios");
 const cors = require("cors");
 
 let serviceAccount;
-
 if (process.env.GOOGLE_SERVICE_ACCOUNT) {
   serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 } else {
@@ -13,19 +12,25 @@ if (process.env.GOOGLE_SERVICE_ACCOUNT) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// In-memory subscription store (replace with DB in production)
 const subscriptions = {};
 
 app.use(express.json());
-// Allow all origins (for development)
-app.use(cors());
-// If you want to restrict:
-/* app.use(cors({
-  origin: ["http://localhost:8100", "https://localhost", "capacitor://localhost"],
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-})); */
-app.options("*", cors()); // Handle preflight
 
+// CORS setup
+app.use(
+  cors({
+    origin: [
+      "http://localhost:8100",
+      "https://localhost",
+      "capacitor://localhost",
+    ],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+app.options("*", cors()); // Preflight handling
 
 const SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"];
 
@@ -41,36 +46,53 @@ async function getAccessToken() {
   return tokens.access_token;
 }
 
-
-
 // -------------------- Subscribe to Topic --------------------
 app.post("/subscribe", async (req, res) => {
   const { token, topic } = req.body;
 
+  if (!token || !topic) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Missing token or topic" });
+  }
+
   try {
     const accessToken = await getAccessToken();
+
+    // Correct FCM subscribe endpoint (device token in URL)
+    const subscribeUrl = `https://iid.googleapis.com/v1/projects/${serviceAccount.project_id}/rel/topics/${topic}`;
+
     await axios.post(
-      `https://iid.googleapis.com/v1/projects/${serviceAccount.project_id}/rel/topics/${topic}`,
+      subscribeUrl,
       {},
       {
-        params: { token },
-        headers: { Authorization: `Bearer ${accessToken}` }
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: { token: token },
       }
     );
 
-    // store in memory (replace with DB in production)
+    // Store locally
     if (!subscriptions[token]) subscriptions[token] = new Set();
     subscriptions[token].add(topic);
 
     res.json({ success: true, message: `Subscribed to ${topic}` });
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error(
+      "FCM Subscribe Error:",
+      error.response?.data || error.message
+    );
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
+// -------------------- Check Subscription --------------------
 app.get("/isSubscribed", (req, res) => {
   const { token, topic } = req.query;
+  if (!token || !topic) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Missing token or topic" });
+  }
   const subscribed = subscriptions[token]?.has(topic) || false;
   res.json({ subscribed });
 });
@@ -80,7 +102,9 @@ app.post("/send", async (req, res) => {
   const { topic, title, body, msg_id } = req.body;
 
   if (!topic || !title || !body || !msg_id) {
-    return res.status(400).json({ success: false, error: "Missing required fields" });
+    return res
+      .status(400)
+      .json({ success: false, error: "Missing required fields" });
   }
 
   try {
@@ -88,15 +112,15 @@ app.post("/send", async (req, res) => {
 
     const message = {
       message: {
-        topic: topic, // send to the topic
+        topic: topic,
         notification: {
           title: title,
-          body: body
+          body: body,
         },
         data: {
-          msg_id: msg_id.toString()
-        }
-      }
+          msg_id: msg_id.toString(),
+        },
+      },
     };
 
     const response = await axios.post(
@@ -105,23 +129,22 @@ app.post("/send", async (req, res) => {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`
-        }
+          Authorization: `Bearer ${accessToken}`,
+        },
       }
     );
 
     res.json({ success: true, response: response.data });
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error("Send Error:", error.response?.data || error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
-
 
 // -------------------- Test Route --------------------
 app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
 
+// Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
