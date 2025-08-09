@@ -1,6 +1,8 @@
 const express = require("express");
 const { google } = require("googleapis");
 const axios = require("axios");
+const cors = require("cors");
+
 let serviceAccount;
 
 if (process.env.GOOGLE_SERVICE_ACCOUNT) {
@@ -14,6 +16,16 @@ const PORT = process.env.PORT || 3000;
 const subscriptions = {};
 
 app.use(express.json());
+// Allow all origins (for development)
+app.use(cors());
+// If you want to restrict:
+/* app.use(cors({
+  origin: ["http://localhost:8100", "https://localhost", "capacitor://localhost"],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+})); */
+app.options("*", cors()); // Handle preflight
+
 
 const SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"];
 
