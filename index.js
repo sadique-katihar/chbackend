@@ -53,13 +53,10 @@ app.post("/subscribe", async (req, res) => {
 
 // -------------------- Send Notification --------------------
 app.post("/send", async (req, res) => {
-  const { token, topic, title, body, msg_id,image } = req.body;
+  const { topic, title, body, msg_id } = req.body;
 
-  if ((!token && !topic) || !title || !body || !msg_id || !image) {
-    return res.status(400).json({
-      success: false,
-      error: "Missing required fields: must provide token OR topic, and title, body, msg_id"
-    });
+  if (!topic || !title || !body || !msg_id) {
+    return res.status(400).json({ success: false, error: "Missing required fields" });
   }
 
   try {
@@ -67,22 +64,16 @@ app.post("/send", async (req, res) => {
 
     const message = {
       message: {
+        topic: topic, // send to the topic
         notification: {
           title: title,
-          image: image,
           body: body
         },
         data: {
-          msg_id: msg_id.toString() // custom data field
+          msg_id: msg_id.toString()
         }
       }
     };
-
-    if (token) {
-      message.message.token = token;
-    } else if (topic) {
-      message.message.topic = topic;
-    }
 
     const response = await axios.post(
       `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
@@ -101,6 +92,7 @@ app.post("/send", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
 
 
 // -------------------- Test Route --------------------
