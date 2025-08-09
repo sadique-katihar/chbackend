@@ -18,19 +18,7 @@ const subscriptions = {};
 
 app.use(express.json());
 
-// CORS setup
-app.use(
-  cors({
-    origin: [
-      "http://localhost:8100",
-      "https://localhost",
-      "capacitor://localhost",
-    ],
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-app.options("*", cors()); // Preflight handling
+
 
 const SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"];
 
