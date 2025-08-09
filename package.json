@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "express": "^5.1.0",
+    "axios": "^1.7.7",
     "googleapis": "^133.0.0"
   }
 }
