@@ -11,6 +11,7 @@ if (process.env.GOOGLE_SERVICE_ACCOUNT) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const subscriptions = {};
 
 app.use(express.json());
 
@@ -28,13 +29,14 @@ async function getAccessToken() {
   return tokens.access_token;
 }
 
+
+
 // -------------------- Subscribe to Topic --------------------
 app.post("/subscribe", async (req, res) => {
   const { token, topic } = req.body;
 
   try {
     const accessToken = await getAccessToken();
-
     await axios.post(
       `https://iid.googleapis.com/v1/projects/${serviceAccount.project_id}/rel/topics/${topic}`,
       {},
@@ -44,11 +46,21 @@ app.post("/subscribe", async (req, res) => {
       }
     );
 
+    // store in memory (replace with DB in production)
+    if (!subscriptions[token]) subscriptions[token] = new Set();
+    subscriptions[token].add(topic);
+
     res.json({ success: true, message: `Subscribed to ${topic}` });
   } catch (error) {
     console.error(error.response?.data || error.message);
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+app.get("/isSubscribed", (req, res) => {
+  const { token, topic } = req.query;
+  const subscribed = subscriptions[token]?.has(topic) || false;
+  res.json({ subscribed });
 });
 
 // -------------------- Send Notification --------------------
