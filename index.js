@@ -1,7 +1,13 @@
 const express = require("express");
 const { google } = require('googleapis');
 const axios = require('axios');
-const serviceAccount = require('./serviceAccountKey.json');
+let serviceAccount;
+
+if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+  serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+} else {
+  serviceAccount = require('./serviceAccountKey.json');
+}
 
 
 
