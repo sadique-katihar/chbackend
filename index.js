@@ -53,7 +53,7 @@ app.post("/subscribe", async (req, res) => {
 
 // -------------------- Send Notification --------------------
 app.post("/send", async (req, res) => {
-  const { token, topic, title, body, msg_id } = req.body;
+  const { token, topic, title, body, msg_id,image } = req.body;
 
   if ((!token && !topic) || !title || !body || !msg_id || !image) {
     return res.status(400).json({
