@@ -1,22 +1,20 @@
 const express = require("express");
-const { google } = require('googleapis');
-const axios = require('axios');
+const { google } = require("googleapis");
+const axios = require("axios");
 let serviceAccount;
 
 if (process.env.GOOGLE_SERVICE_ACCOUNT) {
   serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 } else {
-  serviceAccount = require('./serviceAccountKey.json');
+  serviceAccount = require("./serviceAccountKey.json");
 }
-
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-const SCOPES = ['https://www.googleapis.com/auth/firebase.messaging'];
+const SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"];
 
 async function getAccessToken() {
   const jwtClient = new google.auth.JWT(
@@ -30,7 +28,8 @@ async function getAccessToken() {
   return tokens.access_token;
 }
 
-app.post('/subscribe', async (req, res) => {
+// -------------------- Subscribe to Topic --------------------
+app.post("/subscribe", async (req, res) => {
   const { token, topic } = req.body;
 
   try {
@@ -47,13 +46,56 @@ app.post('/subscribe', async (req, res) => {
 
     res.json({ success: true, message: `Subscribed to ${topic}` });
   } catch (error) {
-    console.error(error);
+    console.error(error.response?.data || error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-app.get("/", (req, res) => {
-    res.send("Backend is running!");
+// -------------------- Send Notification --------------------
+app.post("/send", async (req, res) => {
+  const { token, title, body, msg_id } = req.body;
+
+  if (!token || !title || !body || !msg_id) {
+    return res.status(400).json({ success: false, error: "Missing required fields" });
+  }
+
+  try {
+    const accessToken = await getAccessToken();
+
+    const message = {
+      message: {
+        token: token,
+        notification: {
+          title: title,
+          body: body
+        },
+        data: {
+          msg_id: msg_id.toString() // custom data field
+        }
+      }
+    };
+
+    const response = await axios.post(
+      `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
+      message,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`
+        }
+      }
+    );
+
+    res.json({ success: true, response: response.data });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+// -------------------- Test Route --------------------
+app.get("/", (req, res) => {
+  res.send("Backend is running!");
+});
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
