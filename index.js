@@ -17,7 +17,11 @@ const subscriptions = {};
 
 app.use(express.json());
 // Allow all origins (for development)
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:8100", "capacitor://localhost"], // Ionic dev + native
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 // If you want to restrict:
 /* app.use(cors({
   origin: ["http://localhost:8100", "https://localhost", "capacitor://localhost"],
