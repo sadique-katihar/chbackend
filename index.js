@@ -49,7 +49,7 @@ app.post("/subscribe", async (req, res) => {
 
     // Correct FCM subscribe endpoint (device token in URL)
     
-    const subscribeUrl   = `https://iid.googleapis.com/iid/v1/${token}/rel/topics/${topic}`;
+    const subscribeUrl   = `https://iid.googleapis.com/iid/v1/${accessToken}/rel/topics/${topic}`;
     //const subscribeUrl = `https://iid.googleapis.com/v1/projects/${serviceAccount.project_id}/rel/topics/${topic}`;
 
     await axios.post(
