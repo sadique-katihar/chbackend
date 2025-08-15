@@ -73,6 +73,16 @@ app.post("/send", async (req, res) => {
         image: image,
         body: body,
       },
+      android: {
+        notification: {
+          image: image // needed for Android
+        }
+      },
+      apns: {
+        fcm_options: {
+          image: image // needed for iOS
+        }
+      },
       data: {
         msg_id: msg_id.toString(),
       },
