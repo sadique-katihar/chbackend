@@ -35,7 +35,7 @@ async function getAccessToken() {
 }
 
 // -------------------- Subscribe to Topic --------------------
-app.post("/subscribe", async (req, res) => {
+app.post("/subscribeToTopic", async (req, res) => {
   const { token, topic } = req.body;
 
   if (!token || !topic) {
