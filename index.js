@@ -59,7 +59,7 @@ app.get("/isSubscribed", (req, res) => {
 
 // -------------------- Send Notification --------------------
 app.post("/send", async (req, res) => {
-  const { topic, title, body, msg_id } = req.body;
+  const { topic,image, title, body, msg_id } = req.body;
 
   if (!topic || !title || !body || !msg_id) {
     return res.status(400).json({ success: false, error: "Missing required fields" });
@@ -70,6 +70,7 @@ app.post("/send", async (req, res) => {
       topic: topic,
       notification: {
         title: title,
+        image: image,
         body: body,
       },
       data: {
